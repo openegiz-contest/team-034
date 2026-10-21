@@ -6,15 +6,15 @@
 
 <!-- Written by the Team before the code: your own choice, a few sentences per answer. Everything else in the Submission follows from it. -->
 
-**Enterprise:** <!-- Which mining enterprise, or which part of it, the twin represents. -->
+**Enterprise:** Главная водоотливная установка на горизонте 420 м рудника "Кварцитовые Горки", месторождение "Кварцитовые Горки".
 
-**Users:** <!-- Who uses the twin. -->
+**Users:** Оператор насосной установки.
 
-**Decision:** <!-- Which decision the twin helps them make. -->
+**Decision:** Определить, справится ли система водоотлива с поступающей водой при отказе одного насоса.
 
-**Why this choice:** <!-- Why this enterprise, these users and this decision. -->
+**Why this choice:** Мы выбрали эту проблему, потому что она кажется нам интересной и серьёзной. Мы хотим смоделировать отказ насоса и проверить, сможет ли оставшийся насос откачивать поступающую воду.
 
-**Real or fictional:** <!-- A real object: name it and give the sources of its numbers. A fictional one: which real objects it resembles and where its numbers come from. A real object with sourced numbers scores higher. -->
+**Real or fictional:** Объект реальный. Источник данных — [проект горных работ месторождения «Кварцитовые Горки»](https://hearings.ndbecology.gov.kz/Public/PubHearings/LoadFile/239849), страницы 130–134. В документе указаны два насоса ЦНС 300×480 на горизонте 420 м и подача каждого насоса — 300 м³/ч.
 
 ## Team
 
