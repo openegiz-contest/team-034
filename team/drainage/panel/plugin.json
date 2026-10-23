@@ -1,0 +1,17 @@
+{
+  "type": "panel",
+  "name": "Водоотлив — схема и управление",
+  "id": "team034-drainage-panel",
+  "skipDataQuery": true,
+  "info": {
+    "description": "Schematic of the Kvartsitovye Gorki main drainage (horizon 420 m) driven by its OpenEgiz twins, with pump and inflow controls",
+    "author": {"name": "Team 034"},
+    "keywords": ["drainage", "dewatering", "openegiz"],
+    "logos": {"small": "img/logo.svg", "large": "img/logo.svg"},
+    "links": [],
+    "screenshots": [],
+    "version": "1.0.0",
+    "updated": "2026-10-23"
+  },
+  "dependencies": {"grafanaDependency": ">=12.3.0", "plugins": []}
+}

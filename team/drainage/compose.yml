@@ -30,3 +30,11 @@ services:
     depends_on:
       drainage-setup:
         condition: service_completed_successfully
+
+  # The team's panel (schematic + controls) and the drainage dashboard.
+  grafana:
+    environment:
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: ertis-opentwins,ertis-unity-panel,ertis-opentwins-app,team034-drainage-panel
+    volumes:
+      - ../../team/drainage/panel:/var/lib/grafana-plugins/team034-drainage-panel:ro
+      - ../../team/drainage/dashboard.json:/var/lib/grafana/example-dashboards/drainage.json:ro

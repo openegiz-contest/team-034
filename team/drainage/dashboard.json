@@ -1,0 +1,224 @@
+{
+  "uid": "kvgorki-drainage",
+  "title": "Водоотлив «Кварцитовые Горки» — горизонт 420 м",
+  "tags": [
+    "openegiz",
+    "drainage"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "description": "Цифровой двойник главного водоотлива: двойники в Ditto, расчёт team/drainage/simulator.py, история MQTT → Ditto → InfluxDB.",
+  "panels": [
+    {
+      "id": 1,
+      "type": "team034-drainage-panel",
+      "title": "Схема водоотлива и управление",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 27
+      },
+      "options": {},
+      "targets": []
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Объём воды в водосборнике, м³",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "opentwins-influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: м³",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "displayName": "Объём воды"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "opentwins-influxdb"
+          },
+          "query": "from(bucket: \"default\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"mqtt_consumer\" and (r.thingId == \"org.kvgorki:sump-01\") and (r._field == \"value_volume_properties_value\"))\n  |> group(columns: [\"thingId\", \"_field\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"thingId\", \"_field\"])"
+        }
+      ],
+      "description": "Ось времени — реальное время записи в InfluxDB; расчёт идёт ускоренно (см. модельное время на схеме)."
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Приток и откачка, м³/ч",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "opentwins-influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: м³/ч",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*inflow.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Приток"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*outflow.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Откачка"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "opentwins-influxdb"
+          },
+          "query": "from(bucket: \"default\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"mqtt_consumer\" and (r.thingId == \"org.kvgorki:sump-01\") and (r._field == \"value_inflow_properties_value\" or r._field == \"value_outflow_properties_value\"))\n  |> group(columns: [\"thingId\", \"_field\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"thingId\", \"_field\"])"
+        }
+      ],
+      "description": "Ось времени — реальное время записи в InfluxDB; расчёт идёт ускоренно (см. модельное время на схеме)."
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Мощность насосов, кВт",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "opentwins-influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 36,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatt",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*pump-01.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Н-1"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*pump-02.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Н-2"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "opentwins-influxdb"
+          },
+          "query": "from(bucket: \"default\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"mqtt_consumer\" and (r.thingId == \"org.kvgorki:pump-01\" or r.thingId == \"org.kvgorki:pump-02\") and (r._field == \"value_power_properties_value\" or r._field == \"value_power_properties_value\"))\n  |> group(columns: [\"thingId\", \"_field\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"thingId\", \"_field\"])"
+        }
+      ],
+      "description": "Ось времени — реальное время записи в InfluxDB; расчёт идёт ускоренно (см. модельное время на схеме)."
+    }
+  ]
+}

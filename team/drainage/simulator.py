@@ -3,6 +3,7 @@
 Drainage simulator for the «Кварцитовые Горки» digital twin (horizon 420 m).
 
 Water flows into the main sump; enabled pumps pump it to the surface.
+The water balance itself is the team's WaterBalance (water_balance.py).
 Every tick the simulator:
   1. reads the operator's controls from Ditto (pump enabled, inflow setpoint),
   2. steps the water balance,
@@ -26,7 +27,7 @@ import time
 import urllib.error
 import urllib.request
 
-import paho.mqtt.client as mqtt
+from water_balance import WaterBalance
 
 NAMESPACE = "org.kvgorki"
 TOPIC_PREFIX = "telemetry"
@@ -40,6 +41,8 @@ PUMP_FLOW_M3H = 300.0       # CNS 300-480 rated flow
 PUMP_HEAD_M = 480.0         # CNS 300-480 rated head
 PUMP_EFFICIENCY = 0.7       # assumption
 START_VOLUME_M3 = 400.0     # assumption
+NORMAL_INFLOW_M3H = 400.0   # TODO from PDF: normal inflow
+MAX_INFLOW_M3H = 5000.0     # input limit for the UI, not a mine value
 PUMPS = ["pump-01", "pump-02"]
 
 DITTO_URL = os.environ.get("DITTO_URL", "http://localhost:8080").rstrip("/")
@@ -65,29 +68,53 @@ def read_control(name):
 
 
 class Drainage:
+    """The sump around the team's WaterBalance: capacity, levels, pumps' power."""
+
     def __init__(self):
-        self.volume = START_VOLUME_M3
-        self.inflow = 400.0
-        self.enabled = {p: True for p in PUMPS}
+        self.balance = WaterBalance(volume_m3=START_VOLUME_M3, inflow_m3_h=NORMAL_INFLOW_M3H)
         self.hours = {p: 0.0 for p in PUMPS}
+        self.sim_hours = 0.0
+        self.speedup = 1.0
+
+    @property
+    def volume(self):
+        return self.balance.volume_m3
+
+    @property
+    def inflow(self):
+        return self.balance.inflow_m3_h
+
+    @property
+    def enabled(self):
+        return {"pump-01": self.balance.pump1_on, "pump-02": self.balance.pump2_on}
 
     def apply_controls(self, sump_control, pump_controls):
         if "inflow_m3h" in sump_control:
-            self.inflow = max(0.0, float(sump_control["inflow_m3h"]))
+            try:
+                inflow = float(sump_control["inflow_m3h"])
+            except (TypeError, ValueError):
+                inflow = None
+            if inflow is not None and 0 <= inflow <= MAX_INFLOW_M3H:
+                self.balance.inflow_m3_h = inflow
         for pump, control in pump_controls.items():
-            if "enabled" in control:
-                self.enabled[pump] = bool(control["enabled"])
+            if isinstance(control.get("enabled"), bool):
+                setattr(self.balance, "pump1_on" if pump == "pump-01" else "pump2_on", control["enabled"])
 
     def outflow(self):
-        return sum(PUMP_FLOW_M3H for p in PUMPS if self.enabled[p])
+        """Pumping rate the running pumps deliver (0 when the sump is empty)."""
+        rated = PUMP_FLOW_M3H * sum(self.enabled.values())
+        if self.volume <= 0:
+            return min(rated, self.inflow)
+        return rated
 
     def step(self, dt_s):
+        self.balance.step(dt_s)
+        # The sump cannot hold more than its capacity: the rest floods the horizon.
+        self.balance.volume_m3 = min(SUMP_CAPACITY_M3, self.balance.volume_m3)
         dt_h = dt_s / 3600
-        # Pumps cannot pump more water than is in the sump.
-        pumped = min(self.outflow() * dt_h, self.volume + self.inflow * dt_h)
-        self.volume = min(SUMP_CAPACITY_M3, max(0.0, self.volume + self.inflow * dt_h - pumped))
-        for p in PUMPS:
-            if self.enabled[p]:
+        self.sim_hours += dt_h
+        for p, on in self.enabled.items():
+            if on:
                 self.hours[p] += dt_h
 
     def time_to_alarm_h(self):
@@ -99,7 +126,7 @@ class Drainage:
             return -1.0  # water is not rising
         return (alarm_volume - self.volume) / net
 
-    def snapshot(self):
+    def snapshot(self, now=None):
         fill = 100 * self.volume / SUMP_CAPACITY_M3
         state = "alarm" if fill >= ALARM_PCT else "warning" if fill >= WARNING_PCT else "normal"
         # Hydraulic power P = rho * g * Q * H / eta
@@ -113,10 +140,12 @@ class Drainage:
                 "outflow": {"value": round(self.outflow(), 1), "unit": "m3/h"},
                 "time_to_alarm": {"value": round(self.time_to_alarm_h(), 2), "unit": "h"},
                 "state": {"value": state},
+                "sim_hours": {"value": round(self.sim_hours, 3), "unit": "h"},
+                "updated_at": {"value": round(time.time() if now is None else now, 1), "unit": "s"},
+                "speedup": {"value": self.speedup, "unit": "x"},
             },
         }
-        for p in PUMPS:
-            on = self.enabled[p]
+        for p, on in self.enabled.items():
             things[p] = {
                 "state": {"value": "running" if on else "stopped"},
                 "flow": {"value": PUMP_FLOW_M3H if on else 0.0, "unit": "m3/h"},
@@ -155,9 +184,12 @@ def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     sim = Drainage()
+    sim.speedup = args.speedup
 
     client = None
     if not args.dry_run:
+        import paho.mqtt.client as mqtt
+
         client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"kvgorki-drainage-{os.getpid()}")
         for attempt in range(30):
             try:
