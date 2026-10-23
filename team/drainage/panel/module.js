@@ -8,8 +8,6 @@
  * -> surface. Buttons write the "control" features of the twins; the
  * simulator reads them from Ditto and the panel shows the result only when
  * the twins confirm it.
- *
- * Based on the team's first panel (team034-dewatering-panel).
  */
 System.register(['react', '@grafana/data', '@grafana/runtime'], function (exports) {
   'use strict';
