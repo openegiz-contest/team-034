@@ -1,4 +1,4 @@
-.PHONY: up down ps logs smoke clean example-mine example-mine-stop install uninstall status endpoints upgrade upload-build generate-data copy-build unity-demo check-secrets check-public-host
+.PHONY: up down ps logs smoke clean drainage drainage-stop example-mine example-mine-stop install uninstall status endpoints upgrade upload-build generate-data copy-build unity-demo check-secrets check-public-host
 
 # ---------------------------------------------------------------------------
 # Docker Compose deployment (laptops, CI, contest judges): deploy/compose/
@@ -9,7 +9,10 @@ COMPOSE_BASE := docker compose -f deploy/compose/docker-compose.yml
 # `make clean` forgets it.
 MINE_MARKER  := deploy/compose/.example-mine
 MINE_COMPOSE := examples/mine/compose.yml
-COMPOSE := $(COMPOSE_BASE)$(if $(wildcard $(MINE_MARKER)), -f $(MINE_COMPOSE))
+# Same for the team's drainage twin (`make drainage`).
+DRAINAGE_MARKER  := deploy/compose/.drainage
+DRAINAGE_COMPOSE := team/drainage/compose.yml
+COMPOSE := $(COMPOSE_BASE)$(if $(wildcard $(MINE_MARKER)), -f $(MINE_COMPOSE))$(if $(wildcard $(DRAINAGE_MARKER)), -f $(DRAINAGE_COMPOSE))
 
 ## Start the whole platform with Docker Compose (first run: generates credentials)
 up:
@@ -39,6 +42,16 @@ logs:
 smoke:
 	@bash scripts/compose-smoke.sh
 
+## Run the Kvartsitovye Gorki drainage twin (twins + simulator) on the compose stack
+drainage: up
+	$(COMPOSE_BASE) -f $(DRAINAGE_COMPOSE) up -d --build --wait --wait-timeout 300
+	@touch $(DRAINAGE_MARKER)
+	@echo "Drainage twin running: Grafana -> OpenEgiz -> Twins -> org.kvgorki"
+
+## Stop the drainage simulator (twins and data stay)
+drainage-stop:
+	$(COMPOSE_BASE) -f $(DRAINAGE_COMPOSE) stop drainage-simulator
+
 ## Run the Example Mine (twins + haul-cycle simulator + Grafana dashboard) on the compose stack
 example-mine: up
 	$(COMPOSE_BASE) -f $(MINE_COMPOSE) up -d --build --wait --wait-timeout 300
@@ -52,7 +65,7 @@ example-mine-stop:
 ## Stop the platform and DELETE all its data and credentials
 clean:
 	$(COMPOSE) down -v --remove-orphans
-	rm -f deploy/compose/.env $(MINE_MARKER)
+	rm -f deploy/compose/.env $(MINE_MARKER) $(DRAINAGE_MARKER)
 
 # ---------------------------------------------------------------------------
 # Helm deployment (servers): the chart at the repository root

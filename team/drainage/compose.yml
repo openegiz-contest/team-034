@@ -1,0 +1,32 @@
+# «Кварцитовые Горки» drainage twin: an overlay on deploy/compose/docker-compose.yml.
+# Run from the repository root after `make up`:
+#   docker compose -f deploy/compose/docker-compose.yml -f drainage/compose.yml up -d --build --wait
+
+services:
+  drainage-setup:
+    build: ../../team/drainage
+    image: kvgorki/drainage:local
+    restart: "no"
+    command: ["python", "setup_twins.py"]
+    environment:
+      DITTO_URL: http://ditto-nginx:80
+      DITTO_PASSWORD: ${DITTO_PASSWORD}
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  # Same image as drainage-setup, which builds it (see examples/mine/compose.yml).
+  drainage-simulator:
+    image: kvgorki/drainage:local
+    pull_policy: never
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      DITTO_URL: http://ditto-nginx:80
+      DITTO_PASSWORD: ${DITTO_PASSWORD}
+      SIM_SPEEDUP: ${SIM_SPEEDUP:-60}
+    depends_on:
+      drainage-setup:
+        condition: service_completed_successfully

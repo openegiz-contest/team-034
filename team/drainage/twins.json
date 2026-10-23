@@ -1,0 +1,52 @@
+{
+  "org.kvgorki:mine": {
+    "policyId": "default:basic_policy",
+    "attributes": {"name": "Рудник «Кварцитовые Горки»", "_isType": false, "kind": "mine"},
+    "features": {}
+  },
+  "org.kvgorki:horizon-420": {
+    "policyId": "default:basic_policy",
+    "attributes": {"name": "Горизонт 420 м", "_isType": false, "_parents": "org.kvgorki:mine",
+                   "kind": "horizon", "depth_m": 420},
+    "features": {}
+  },
+  "org.kvgorki:sump-01": {
+    "policyId": "default:basic_policy",
+    "attributes": {"name": "Главный водосборник", "_isType": false, "_parents": "org.kvgorki:horizon-420",
+                   "kind": "sump", "capacity_m3": 1600, "alarm_pct": 80, "warning_pct": 60},
+    "features": {
+      "volume": {"properties": {"value": 0, "unit": "m3"}},
+      "level": {"properties": {"value": 0, "unit": "m"}},
+      "fill_pct": {"properties": {"value": 0, "unit": "%"}},
+      "inflow": {"properties": {"value": 0, "unit": "m3/h"}},
+      "outflow": {"properties": {"value": 0, "unit": "m3/h"}},
+      "time_to_alarm": {"properties": {"value": -1, "unit": "h"}},
+      "state": {"properties": {"value": "normal"}},
+      "control": {"properties": {"inflow_m3h": 400}}
+    }
+  },
+  "org.kvgorki:pump-01": {
+    "policyId": "default:basic_policy",
+    "attributes": {"name": "Насос №1 ЦНС 300×480", "_isType": false, "_parents": "org.kvgorki:horizon-420",
+                   "kind": "pump", "model": "CNS 300-480", "rated_flow_m3h": 300, "rated_head_m": 480},
+    "features": {
+      "state": {"properties": {"value": "stopped"}},
+      "flow": {"properties": {"value": 0, "unit": "m3/h"}},
+      "power": {"properties": {"value": 0, "unit": "kW"}},
+      "hours": {"properties": {"value": 0, "unit": "h"}},
+      "control": {"properties": {"enabled": true}}
+    }
+  },
+  "org.kvgorki:pump-02": {
+    "policyId": "default:basic_policy",
+    "attributes": {"name": "Насос №2 ЦНС 300×480", "_isType": false, "_parents": "org.kvgorki:horizon-420",
+                   "kind": "pump", "model": "CNS 300-480", "rated_flow_m3h": 300, "rated_head_m": 480},
+    "features": {
+      "state": {"properties": {"value": "stopped"}},
+      "flow": {"properties": {"value": 0, "unit": "m3/h"}},
+      "power": {"properties": {"value": 0, "unit": "kW"}},
+      "hours": {"properties": {"value": 0, "unit": "h"}},
+      "control": {"properties": {"enabled": true}}
+    }
+  }
+}

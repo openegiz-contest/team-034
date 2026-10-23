@@ -19,6 +19,8 @@ examples/ar-lamp/https_server.log
 deploy/compose/.env
 # Set by `make example-mine`: compose commands then include the mine overlay
 deploy/compose/.example-mine
+# Set by `make drainage`: compose commands then include the drainage overlay
+deploy/compose/.drainage
 
 __pycache__/
 *.pyc
