@@ -1,4 +1,4 @@
-# Водоотлив «Кварцитовые Горки» — заготовка
+# Водоотлив «Кварцитовые Горки»
 
 Папка `team/drainage/` в командном репозитории.
 
@@ -46,7 +46,7 @@ curl -u ditto:ПАРОЛЬ -X PUT -H 'Content-Type: application/json' \
   http://localhost:8080/api/2/things/org.kvgorki:pump-02/features/control/properties/enabled -d 'false'
 
 curl -u ditto:ПАРОЛЬ -X PUT -H 'Content-Type: application/json' \
-  http://localhost:8080/api/2/things/org.kvgorki:sump-01/features/control/properties/inflow_m3h -d '500'
+  http://localhost:8080/api/2/things/org.kvgorki:sump-01/features/control/properties/inflow_m3h -d '324'
 ```
 
 Читать текущее состояние:
@@ -62,6 +62,6 @@ pip install paho-mqtt==2.1.0
 python team/drainage/simulator.py --dry-run --steps 5
 ```
 
-## Что заменить (TODO)
+## Откуда числа
 
-Числа в начале `simulator.py` и в `twins.json` (`capacity_m3`, `normal_inflow_m3h`, `alarm_pct`, `warning_pct`) — временные. Заменить на значения из проекта горных работ (PDF, стр. 130–134), остальное записать в SUBMISSION.md как допущения.
+Параметры — из «Плана горных работ разработки запасов месторождения «Кварцитовые Горки»», стр. 131–134 ([PDF](https://hearings.ndbecology.gov.kz/Public/PubHearings/LoadFile/239849)): насосы ЦНС 300×480 (300 м³/ч, 480 м, двигатель 630 кВт), фактический приток 65–70 м³/ч, максимальный 108 м³/ч, норма откачки суточного притока за 20 ч, автоматическое включение насосов по уровню. Вместимость водосборника, уровни пуска/останова и КПД в проекте не указаны — это допущения, они перечислены в начале `simulator.py`.

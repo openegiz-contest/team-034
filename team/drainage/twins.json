@@ -4,9 +4,52 @@
     "attributes": {
       "name": "Рудник «Кварцитовые Горки»",
       "_isType": false,
-      "kind": "mine"
+      "kind": "mine",
+      "operator": "ТОО «Казахалтын»",
+      "drainage": "ступенчатый",
+      "source": "План горных работ, месторождение «Кварцитовые Горки», стр. 131–134"
     },
     "features": {}
+  },
+  "org.kvgorki:shaft-flangovaya": {
+    "policyId": "default:basic_policy",
+    "attributes": {
+      "name": "Ствол шх. «Фланговая»",
+      "_isType": false,
+      "_parents": "org.kvgorki:mine",
+      "kind": "shaft",
+      "source": "План горных работ, месторождение «Кварцитовые Горки», стр. 131–134 (стр. 131)"
+    },
+    "features": {}
+  },
+  "org.kvgorki:riser-01": {
+    "policyId": "default:basic_policy",
+    "attributes": {
+      "name": "Нагнетательный став в стволе",
+      "_isType": false,
+      "_parents": "org.kvgorki:shaft-flangovaya",
+      "kind": "pipeline",
+      "pipe_diameters_mm": [
+        159,
+        219
+      ],
+      "from": "org.kvgorki:horizon-420",
+      "to": "поверхность",
+      "source": "План горных работ, месторождение «Кварцитовые Горки», стр. 131–134 (стр. 131)"
+    },
+    "features": {
+      "flow": {
+        "properties": {
+          "value": 0,
+          "unit": "m3/h"
+        }
+      },
+      "state": {
+        "properties": {
+          "value": "idle"
+        }
+      }
+    }
   },
   "org.kvgorki:horizon-420": {
     "policyId": "default:basic_policy",
@@ -22,38 +65,43 @@
   "org.kvgorki:sump-01": {
     "policyId": "default:basic_policy",
     "attributes": {
-      "name": "Главный водосборник",
+      "name": "Главный водосборник гор. 420 м",
       "_isType": false,
       "_parents": "org.kvgorki:horizon-420",
       "kind": "sump",
-      "capacity_m3": 1600,
-      "alarm_pct": 80,
+      "capacity_m3": 432,
+      "capacity_note": "допущение: 4 ч максимального притока 108 м³/ч",
+      "normal_inflow_m3h": 70,
+      "project_max_inflow_m3h": 108,
+      "max_inflow_m3h": 2000,
+      "stop_pct": 20,
+      "start_pct": 50,
       "warning_pct": 60,
-      "normal_inflow_m3h": 400,
-      "max_inflow_m3h": 5000
+      "alarm_pct": 80,
+      "source": "План горных работ, месторождение «Кварцитовые Горки», стр. 131–134 (стр. 131, 133)"
     },
     "features": {
       "volume": {
         "properties": {
-          "value": 0,
+          "value": 129.6,
           "unit": "m3"
         }
       },
       "level": {
         "properties": {
-          "value": 0,
+          "value": 0.9,
           "unit": "m"
         }
       },
       "fill_pct": {
         "properties": {
-          "value": 0,
+          "value": 30,
           "unit": "%"
         }
       },
       "inflow": {
         "properties": {
-          "value": 0,
+          "value": 70,
           "unit": "m3/h"
         }
       },
@@ -61,6 +109,23 @@
         "properties": {
           "value": 0,
           "unit": "m3/h"
+        }
+      },
+      "available_capacity": {
+        "properties": {
+          "value": 0,
+          "unit": "m3/h"
+        }
+      },
+      "required_capacity": {
+        "properties": {
+          "value": 0,
+          "unit": "m3/h"
+        }
+      },
+      "rules_ok": {
+        "properties": {
+          "value": true
         }
       },
       "time_to_alarm": {
@@ -94,7 +159,7 @@
       },
       "control": {
         "properties": {
-          "inflow_m3h": 400
+          "inflow_m3h": 70
         }
       }
     }
@@ -102,18 +167,26 @@
   "org.kvgorki:pump-01": {
     "policyId": "default:basic_policy",
     "attributes": {
-      "name": "Насос №1 ЦНС 300×480",
+      "name": "Насос Н-1 ЦНС 300×480",
       "_isType": false,
       "_parents": "org.kvgorki:horizon-420",
       "kind": "pump",
-      "model": "CNS 300-480",
+      "model": "ЦНС 300×480",
       "rated_flow_m3h": 300,
-      "rated_head_m": 480
+      "rated_head_m": 480,
+      "motor": "А4-400У-4МУЗ",
+      "motor_kw": 630,
+      "voltage_v": 6000,
+      "rpm": 1500,
+      "mass_kg": 2106,
+      "suction_from": "org.kvgorki:sump-01",
+      "discharge_to": "org.kvgorki:riser-01",
+      "source": "План горных работ, месторождение «Кварцитовые Горки», стр. 131–134 (стр. 131)"
     },
     "features": {
       "state": {
         "properties": {
-          "value": "stopped"
+          "value": "standby"
         }
       },
       "flow": {
@@ -126,6 +199,12 @@
         "properties": {
           "value": 0,
           "unit": "kW"
+        }
+      },
+      "energy": {
+        "properties": {
+          "value": 0,
+          "unit": "kWh"
         }
       },
       "hours": {
@@ -144,18 +223,26 @@
   "org.kvgorki:pump-02": {
     "policyId": "default:basic_policy",
     "attributes": {
-      "name": "Насос №2 ЦНС 300×480",
+      "name": "Насос Н-2 ЦНС 300×480",
       "_isType": false,
       "_parents": "org.kvgorki:horizon-420",
       "kind": "pump",
-      "model": "CNS 300-480",
+      "model": "ЦНС 300×480",
       "rated_flow_m3h": 300,
-      "rated_head_m": 480
+      "rated_head_m": 480,
+      "motor": "А4-400У-4МУЗ",
+      "motor_kw": 630,
+      "voltage_v": 6000,
+      "rpm": 1500,
+      "mass_kg": 2106,
+      "suction_from": "org.kvgorki:sump-01",
+      "discharge_to": "org.kvgorki:riser-01",
+      "source": "План горных работ, месторождение «Кварцитовые Горки», стр. 131–134 (стр. 131)"
     },
     "features": {
       "state": {
         "properties": {
-          "value": "stopped"
+          "value": "standby"
         }
       },
       "flow": {
@@ -168,6 +255,12 @@
         "properties": {
           "value": 0,
           "unit": "kW"
+        }
+      },
+      "energy": {
+        "properties": {
+          "value": 0,
+          "unit": "kWh"
         }
       },
       "hours": {

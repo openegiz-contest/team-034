@@ -22,7 +22,7 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
       var BASE = 'api/plugin-proxy/ertis-opentwins-app/ditto/api/2/things';
       var C = {
         water: '#3d8fd6', pipe: '#8a8f98', run: '#56a64b', stop: '#7b7f87',
-        warn: '#f0a03c', alarm: '#e5534b', rock: 'rgba(150,125,100,0.16)', void: 'rgba(0,0,0,0.28)'
+        warn: '#f0a03c', alarm: '#e5534b', ready: '#4f7ea8', off: '#8c3a3a', rock: 'rgba(150,125,100,0.16)', void: 'rgba(0,0,0,0.28)'
       };
 
       function request(method, path, data) {
@@ -77,6 +77,8 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
         var inflow = v(t, 'sump-01', 'inflow') || 0;
         var outflow = v(t, 'sump-01', 'outflow') || 0;
         var warnPct = attr(t, 'sump-01', 'warning_pct') || 60;
+        var startPct = attr(t, 'sump-01', 'start_pct') || 50;
+        var stopPct = attr(t, 'sump-01', 'stop_pct') || 20;
         var alarmPct = attr(t, 'sump-01', 'alarm_pct') || 80;
         var state = v(t, 'sump-01', 'state');
         // Sump chamber geometry
@@ -87,10 +89,11 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
         var pumpX = [500, 580], pumpY = 318;
 
         var pumps = PUMPS.map(function (p, i) {
-          var running = fresh && v(t, p.id, 'state') === 'running';
+          var st = fresh ? v(t, p.id, 'state') : undefined;
+          var running = st === 'running';
           var cx = pumpX[i];
           return h('g', {key: p.id},
-            h('circle', {cx: cx, cy: pumpY, r: 22, fill: running ? C.run : C.stop, stroke: '#222', strokeWidth: 2}),
+            h('circle', {cx: cx, cy: pumpY, r: 22, fill: running ? C.run : st === 'standby' ? C.ready : st === 'off' ? C.off : C.stop, stroke: '#222', strokeWidth: 2}),
             h('g', null,
               h('line', {x1: cx - 13, y1: pumpY, x2: cx + 13, y2: pumpY, stroke: '#fff', strokeWidth: 3}),
               h('line', {x1: cx, y1: pumpY - 13, x2: cx, y2: pumpY + 13, stroke: '#fff', strokeWidth: 3}),
@@ -98,7 +101,7 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
                 from: '0 ' + cx + ' ' + pumpY, to: '360 ' + cx + ' ' + pumpY, dur: '1s', repeatCount: 'indefinite'}) : null),
             h('text', {x: cx, y: pumpY + 40, textAnchor: 'middle', fontSize: 13, fill: 'currentColor', fontWeight: 600}, p.label),
             h('text', {x: cx, y: pumpY + 54, textAnchor: 'middle', fontSize: 11, fill: 'currentColor', opacity: 0.8},
-              running ? num(v(t, p.id, 'flow')) + ' м³/ч' : 'стоит'),
+              running ? num(v(t, p.id, 'flow')) + ' м³/ч' : st === 'standby' ? 'ждёт уровня' : st === 'off' ? 'выведен' : '—'),
             h('text', {x: cx, y: pumpY + 68, textAnchor: 'middle', fontSize: 11, fill: 'currentColor', opacity: 0.8},
               running ? num(v(t, p.id, 'power')) + ' кВт' : ''));
         });
@@ -109,8 +112,8 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
           h('line', {key: 'surf', x1: 0, y1: 36, x2: 820, y2: 36, stroke: '#9a8a70', strokeWidth: 3}),
           h('text', {key: 'surft', x: 10, y: 26, fontSize: 13, fill: 'currentColor', opacity: 0.8}, 'Поверхность'),
           h('rect', {key: 'shaft', x: 650, y: 36, width: 56, height: 330, fill: C.void, stroke: '#666'}),
-          h('text', {key: 'shaftt', x: 664, y: 120, fontSize: 12, fill: 'currentColor', opacity: 0.8, textAnchor: 'middle',
-            transform: 'rotate(-90 664 120)'}, 'Ствол'),
+          h('text', {key: 'shaftt', x: 664, y: 150, fontSize: 12, fill: 'currentColor', opacity: 0.8, textAnchor: 'middle',
+            transform: 'rotate(-90 664 150)'}, 'Ствол шх. «Фланговая»'),
           h('rect', {key: 'gal', x: 430, y: 270, width: 220, height: 96, fill: C.void}),
           h('text', {key: 'galt', x: 440, y: 410, fontSize: 13, fill: 'currentColor', fontWeight: 600}, 'Горизонт 420 м · насосная камера'),
           // Inflow
@@ -123,6 +126,10 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
           h('text', {key: 'warnt', x: sx + sw + 6, y: levelY(warnPct) + 4, fontSize: 11, fill: C.warn}, warnPct + '%'),
           h('line', {key: 'alarm', x1: sx, y1: levelY(alarmPct), x2: sx + sw, y2: levelY(alarmPct), stroke: C.alarm, strokeWidth: 2, strokeDasharray: '6 5'}),
           h('text', {key: 'alarmt', x: sx + sw + 6, y: levelY(alarmPct) + 4, fontSize: 11, fill: C.alarm}, 'авария ' + alarmPct + '%'),
+          h('line', {key: 'start', x1: sx, y1: levelY(startPct), x2: sx + 40, y2: levelY(startPct), stroke: '#aaa', strokeWidth: 2}),
+          h('text', {key: 'startt', x: sx + 44, y: levelY(startPct) + 4, fontSize: 10, fill: 'currentColor', opacity: 0.75}, 'пуск ' + startPct + '%'),
+          h('line', {key: 'stop', x1: sx, y1: levelY(stopPct), x2: sx + 40, y2: levelY(stopPct), stroke: '#aaa', strokeWidth: 2}),
+          h('text', {key: 'stopt', x: sx + 44, y: levelY(stopPct) + 4, fontSize: 10, fill: 'currentColor', opacity: 0.75}, 'стоп ' + stopPct + '%'),
           h('text', {key: 'sumpt', x: sx + sw / 2, y: sy - 10, textAnchor: 'middle', fontSize: 13, fontWeight: 600, fill: 'currentColor'}, 'Главный водосборник'),
           h('text', {key: 'vol', x: sx + sw / 2, y: bottom - 14, textAnchor: 'middle', fontSize: 18, fontWeight: 700, fill: '#fff',
             stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3, paintOrder: 'stroke'},
@@ -133,7 +140,8 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
           h('g', {key: 'dis2'}, flowLine('M ' + pumpX[1] + ' ' + (pumpY - 22) + ' L ' + pumpX[1] + ' 280', anyRunning, 5, C.water)),
           h('g', {key: 'riser'}, flowLine('M 678 280 L 678 22 L 800 22', anyRunning, 6, C.water)),
           h('text', {key: 'outt', x: 712, y: 14, fontSize: 12, fill: 'currentColor'}, '↑ ' + (fresh ? num(outflow) : '—') + ' м³/ч'),
-          h('text', {key: 'head', x: 712, y: 160, fontSize: 11, fill: 'currentColor', opacity: 0.75}, 'став, напор 480 м')
+          h('text', {key: 'head', x: 712, y: 150, fontSize: 11, fill: 'currentColor', opacity: 0.75}, 'став Ø159/219 мм'),
+          h('text', {key: 'head2', x: 712, y: 166, fontSize: 11, fill: 'currentColor', opacity: 0.75}, 'напор 480 м')
         ];
         return h('svg', {viewBox: '0 0 820 420', role: 'img', 'aria-label': 'Схема водоотлива горизонта 420 м',
           style: {width: '100%', height: 'auto', maxHeight: props.maxHeight, display: 'block'}}, children.concat(pumps));
@@ -192,7 +200,8 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
         var age = typeof updated === 'number' ? now / 1000 - updated : Infinity;
         var fresh = !error && age > -5 && age < 15;
         var busy = !fresh || !!pending;
-        var normalInflow = attr(twins, 'sump-01', 'normal_inflow_m3h') || 400;
+        var normalInflow = attr(twins, 'sump-01', 'normal_inflow_m3h') || 70;
+        var projectMax = attr(twins, 'sump-01', 'project_max_inflow_m3h') || 108;
         var maxInflow = attr(twins, 'sump-01', 'max_inflow_m3h') || 5000;
 
         // writes: [{id, props}] -> PUT features/control/properties of each twin
@@ -218,7 +227,7 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
         }
         function setPump(id, on, label) {
           send(label || ((on ? 'включить ' : 'отключить ') + id), [{id: id, props: {enabled: on}}],
-            function (m) { return v(m, id, 'state') === (on ? 'running' : 'stopped'); });
+            function (m) { return on ? v(m, id, 'state') !== 'off' : v(m, id, 'state') === 'off'; });
         }
         function setInflow(amount, label) {
           send(label || ('приток ' + amount + ' м³/ч'), [{id: 'sump-01', props: {inflow_m3h: amount}}],
@@ -235,21 +244,21 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
           setInflow(amount);
         }
         var scenarios = [
-          {name: 'Отказ насоса Н-1', hint: 'Н-1 останавливается, работает один Н-2',
+          {name: 'Отказ насоса Н-1', hint: 'Н-1 выходит из строя, откачку берёт Н-2',
             run: function () { setPump('pump-01', false, 'сценарий «Отказ насоса Н-1»'); }},
-          {name: 'Паводок: приток ×2', hint: 'приток ' + num(normalInflow * 2) + ' м³/ч',
-            run: function () { setDraft(String(normalInflow * 2)); setInflow(normalInflow * 2, 'сценарий «Паводок»'); }},
+          {name: 'Прорыв воды: ×3 к максимуму', hint: 'приток ' + num(projectMax * 3) + ' м³/ч — больше, чем один насос (300)',
+            run: function () { setDraft(String(projectMax * 3)); setInflow(projectMax * 3, 'сценарий «Прорыв воды»'); }},
           {name: 'Обесточивание', hint: 'оба насоса останавливаются',
             run: function () {
               send('сценарий «Обесточивание»', [{id: 'pump-01', props: {enabled: false}}, {id: 'pump-02', props: {enabled: false}}],
-                function (m) { return v(m, 'pump-01', 'state') === 'stopped' && v(m, 'pump-02', 'state') === 'stopped'; });
+                function (m) { return v(m, 'pump-01', 'state') === 'off' && v(m, 'pump-02', 'state') === 'off'; });
             }},
           {name: 'Вернуть норму', hint: 'оба насоса, приток ' + num(normalInflow) + ' м³/ч', reset: true,
             run: function () {
               setDraft(String(normalInflow));
               send('возврат к норме', [{id: 'pump-01', props: {enabled: true}}, {id: 'pump-02', props: {enabled: true}},
                 {id: 'sump-01', props: {inflow_m3h: normalInflow}}],
-                function (m) { return v(m, 'pump-01', 'state') === 'running' && v(m, 'pump-02', 'state') === 'running' && Math.abs(v(m, 'sump-01', 'inflow') - normalInflow) < 0.11; });
+                function (m) { return v(m, 'pump-01', 'state') !== 'off' && v(m, 'pump-02', 'state') !== 'off' && Math.abs(v(m, 'sump-01', 'inflow') - normalInflow) < 0.11; });
             }}
         ];
 
@@ -265,7 +274,7 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
         var ttaText, ttaColor;
         if (!fresh) { ttaText = '—'; ttaColor = 'inherit'; }
         else if (tta === 0) { ttaText = 'АВАРИЙНЫЙ УРОВЕНЬ'; ttaColor = C.alarm; }
-        else if (typeof tta === 'number' && tta < 0) { ttaText = 'вода не прибывает'; ttaColor = C.run; }
+        else if (typeof tta === 'number' && tta < 0) { ttaText = 'откачка обеспечена'; ttaColor = C.run; }
         else { ttaText = hoursText(tta); ttaColor = tta < 2 ? C.alarm : C.warn; }
         var balance = (v(twins, 'sump-01', 'inflow') || 0) - (v(twins, 'sump-01', 'outflow') || 0);
         var power = PUMPS.reduce(function (sum, p) { return sum + (v(twins, p.id, 'power') || 0); }, 0);
@@ -286,19 +295,25 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
 
         var kpis = h('div', {style: {display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10}},
           kpi('До аварийного уровня', ttaText, ttaColor),
+          kpi('Норма ПБ: откачка за 20 ч', fresh ? 'есть ' + num(v(twins, 'sump-01', 'available_capacity')) + ' · нужно ' +
+            num(v(twins, 'sump-01', 'required_capacity'), 1) + ' м³/ч' : '—', v(twins, 'sump-01', 'rules_ok') ? C.run : C.alarm, true),
           kpi('Баланс воды', fresh ? (balance > 0 ? '+' : '') + num(balance) + ' м³/ч' : '—', balance > 0 ? C.warn : C.run),
           kpi('Уровень в водосборнике', fresh ? num(v(twins, 'sump-01', 'level'), 2) + ' м' : '—'),
           kpi('Мощность насосов', fresh ? num(power) + ' кВт' : '—'));
 
         var pumpCards = PUMPS.map(function (p) {
-          var running = v(twins, p.id, 'state') === 'running';
+          var st = v(twins, p.id, 'state');
+          var off = st === 'off';
+          var text = st === 'running' ? '● Работает' : st === 'standby' ? '◌ Готов, ждёт уровня' : off ? '✕ Выведен (отказ)' : '—';
           return h('div', {key: p.id, style: Object.assign({}, card, {flex: '1 1 170px'})},
             h('div', {style: label}, 'Насос ' + p.label),
-            h('div', {style: {fontSize: 17, marginBottom: 10, color: fresh && running ? C.run : 'inherit'}},
-              fresh ? (running ? '● Работает' : '○ Отключён') : '—'),
+            h('div', {style: {fontSize: 16, marginBottom: 4, color: !fresh ? 'inherit' : st === 'running' ? C.run : off ? C.alarm : C.ready}},
+              fresh ? text : '—'),
+            h('div', {style: {fontSize: 12, opacity: 0.7, marginBottom: 8}}, fresh ? 'наработка ' + num(v(twins, p.id, 'hours'), 1) +
+              ' ч · ' + num(v(twins, p.id, 'energy')) + ' кВт·ч' : ''),
             h('div', {style: {display: 'flex', gap: 6, flexWrap: 'wrap'}},
-              h('button', {type: 'button', style: btn(true), disabled: busy || running, onClick: function () { setPump(p.id, true); }}, 'Включить'),
-              h('button', {type: 'button', style: btn(false), disabled: busy || !running, onClick: function () { setPump(p.id, false); }}, 'Отключить')));
+              h('button', {type: 'button', style: Object.assign(btn(true), {opacity: busy || !off ? 0.4 : 1}), disabled: busy || !off, onClick: function () { setPump(p.id, true); }}, 'Ввести в работу'),
+              h('button', {type: 'button', style: Object.assign(btn(false), {opacity: busy || off ? 0.4 : 1}), disabled: busy || off, onClick: function () { setPump(p.id, false); }}, 'Вывести (отказ)')));
         });
 
         var inflowForm = h('form', {onSubmit: applyInflow, style: Object.assign({}, card, {flex: '1 1 220px'})},
@@ -308,7 +323,7 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
               onChange: function (e) { setDraft(e.target.value); },
               style: {padding: 7, width: 90, border: '1px solid #888', borderRadius: 6, background: 'transparent', color: 'inherit'}}),
             h('button', {type: 'submit', style: btn(true), disabled: busy}, 'Применить')),
-          h('div', {style: {fontSize: 12, opacity: 0.7, marginTop: 6}}, 'Нормальный приток: ' + num(normalInflow) + ' м³/ч'));
+          h('div', {style: {fontSize: 12, opacity: 0.7, marginTop: 6}}, 'По проекту: фактический 65–70, максимальный ' + num(projectMax) + ' м³/ч'));
 
         var scenarioCard = h('div', {style: Object.assign({}, card, {flex: '2 1 360px'})},
           h('div', {style: label}, 'Сценарии «что если»'),
@@ -325,7 +340,8 @@ System.register(['react', '@grafana/data', '@grafana/runtime'], function (export
           kpis,
           h('div', {style: {display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10}}, pumpCards, inflowForm, scenarioCard),
           h('div', {role: 'status', 'aria-live': 'polite', style: {padding: '10px 2px 0', minHeight: 28, fontSize: 13}},
-            notice || 'Кнопки меняют двойников в OpenEgiz; расчёт читает их и пересчитывает водосборник. Время до аварии — в модельных часах.'));
+            notice || 'Насосы включаются автоматически по уровню (пуск ' + (attr(twins, 'sump-01', 'start_pct') || 50) + '%, стоп ' + (attr(twins, 'sump-01', 'stop_pct') || 20) +
+            '%), второй подключается при ' + (attr(twins, 'sump-01', 'warning_pct') || 60) + '%. Кнопки меняют двойников в OpenEgiz. Время — модельное.'));
       }
       exports('plugin', new PanelPlugin(Panel));
     }
