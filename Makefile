@@ -46,7 +46,7 @@ smoke:
 drainage: up
 	$(COMPOSE_BASE) -f $(DRAINAGE_COMPOSE) up -d --build --wait --wait-timeout 300
 	@touch $(DRAINAGE_MARKER)
-	@echo "Drainage twin running: Grafana -> OpenEgiz -> Twins -> org.kvgorki"
+	@echo "Drainage twin running: Grafana -> Dashboards -> OpenEgiz Examples -> Водоотлив «Кварцитовые Горки» — горизонт 420 м"
 
 ## Stop the drainage simulator (twins and data stay)
 drainage-stop:

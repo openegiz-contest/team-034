@@ -1,43 +1,70 @@
-# <Team name>: a digital mine on OpenEgiz
+# Водоотлив рудника «Кварцитовые Горки»: цифровой двойник на OpenEgiz
 
-> Team Repository of the contest “Digital Mine on OpenEgiz”. **Replace the contents of this file with the instructions for your Submission.** The AI Jury runs the Submission strictly by these instructions, from scratch, in the Judge Environment. Accepted languages: English, Kazakh, Russian.
+Цифровой двойник главного водоотлива горизонта 420 м подземного рудника «Кварцитовые Горки»: водосборник, два насоса ЦНС 300×480, став в стволе шх. «Фланговая». Оператор видит, справятся ли насосы с притоком при отказе одного из них и сколько времени остаётся до аварийного уровня. Замысел, модель, сценарии и источники данных — в [SUBMISSION.md](SUBMISSION.md).
 
-> **Start with the Concept**, the first section of [SUBMISSION.md](SUBMISSION.md): the Team writes it before any code. What AI agents build from this Template without a Concept is the Default Solution, published on the [contest site](https://openegiz-contest.github.io/) as the low bar: a Submission that does not go beyond it gets low levels in the Rubric. AI agents read [AGENTS.md](AGENTS.md).
+## Запуск
 
-## Running
-
-Requirements (Docker, `make`, Windows/WSL2 setup) are in [OPENEGIZ.md](OPENEGIZ.md) / [OPENEGIZ.ru.md](OPENEGIZ.ru.md).
+Нужны Ubuntu 24.04 (amd64) с Docker Engine и Docker Compose; пользователь — в группе `docker`. Из корня репозитория:
 
 ```bash
-sudo apt install -y make   # if make is missing (clean Ubuntu)
-make up            # the OpenEgiz platform
-make example-mine  # the Example Mine: twins, simulator, dashboard
+sudo apt-get update && sudo apt-get install -y make
+make drainage
 ```
 
-Replace these commands with the commands of your Submission. The Submission must start by following these instructions without manual intervention (Rules, clause 6.4); downloading datasets and models and building are also listed here.
+`make drainage` поднимает платформу OpenEgiz (первый запуск скачивает и собирает образы, это занимает несколько минут), создаёт двойников водоотлива в Ditto, запускает расчёт и подключает дашборд в Grafana. В конце печатаются адреса и пароли, в последней строке — `Drainage twin running`.
 
-## What to open
+## Что открыть
 
-- Grafana: the address and login are printed by `make up`.
-- <where to see the mine visualization, which dashboards>
+- **Grafana:** `http://localhost:3000`, логин `admin`, пароль печатает `make drainage` (он же — `GRAFANA_ADMIN_PASSWORD` в `deploy/compose/.env`):
 
-## Repository contents
+  ```bash
+  grep GRAFANA_ADMIN_PASSWORD deploy/compose/.env
+  ```
 
-| Path | Contents |
+- Дашборд: **Dashboards → OpenEgiz Examples → «Водоотлив «Кварцитовые Горки» — горизонт 420 м»**: схема водоотлива, время до аварийного уровня, норма ПБ, управление насосами и притоком, сценарии «что если», графики.
+- Двойники: приложение **OpenEgiz → Twins**, пространство имён `org.kvgorki`.
+
+Модельное время идёт в 60 раз быстрее реального: через 1–2 минуты после запуска насосы начинают циклы откачки по уровню.
+
+## Как проверить сценарии
+
+На дашборде, блок «Сценарии «что если»»:
+
+1. **Отказ насоса Н-1** — Н-1 выведен, откачку берёт Н-2, «До аварийного уровня: откачка обеспечена».
+2. **Прорыв воды: ×3 к максимуму** — приток 324 м³/ч, работают оба насоса; если вывести один насос, появляется время до аварии.
+3. **Обесточивание** — оба насоса выведены, «До аварийного уровня» около 3 ч, уровень растёт.
+4. **Вернуть норму** — отменяет любой сценарий.
+
+Подробнее — в [SUBMISSION.md](SUBMISSION.md), раздел «Modules and What-if Scenarios».
+
+## Остановка
+
+```bash
+make down    # остановить, данные сохраняются; make up — поднять снова вместе с водоотливом
+make clean   # остановить и удалить все данные
+```
+
+## Тесты расчёта
+
+```bash
+python3 -m unittest discover -s team/drainage/tests -v
+```
+
+## Содержимое репозитория
+
+| Путь | Что это |
 |---|---|
-| `team/` | Directory for the Team's code. Using it is optional: any part may be changed, including the platform core |
-| `SUBMISSION.md` | Description of the Submission: **required** |
-| `presentation.pdf` | Presentation: **required**, in the repository root |
-| `AGENTS.md`, `CLAUDE.md` | Instructions for your AI agents (Codex, Claude Code and others read them automatically) |
-| `examples/mine/` | The Example Mine: shows how a digital mine is built on OpenEgiz. It is not a basis for the Submission |
-| `OPENEGIZ.md`, `OPENEGIZ.ru.md` | Documentation of the OpenEgiz platform v1.0.4 |
+| `team/drainage/` | Решение: двойники (`twins.json`), расчёт (`water_balance.py`, `simulator.py`), плагин Grafana со схемой (`panel/`), дашборд (`dashboard.json`), подключение к платформе (`compose.yml`), тесты |
+| `SUBMISSION.md` | Описание Решения |
+| `presentation.pdf` | Презентация |
+| `Makefile` | цель `make drainage` |
+| `examples/mine/` | Пример рудника из шаблона OpenEgiz, в Решении не используется |
+| `OPENEGIZ.md`, `OPENEGIZ.ru.md` | Документация платформы OpenEgiz v1.0.4 |
 
-The Submission is the `main` branch at the moment of the Freeze; other branches are not evaluated.
+## Лицензия
 
-## License
-
-The Submission is distributed under the MIT license, see [LICENSE](LICENSE). Copyright belongs to the Team: add the line `Copyright (c) 2026 <Team members>` to `LICENSE`.
+MIT, см. [LICENSE](LICENSE).
 
 ---
 
-Platform: [aleka07/openegiz](https://github.com/aleka07/openegiz). If the platform was useful to you, support the project with a star on GitHub.
+Платформа: [aleka07/openegiz](https://github.com/aleka07/openegiz).
