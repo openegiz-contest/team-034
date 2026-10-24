@@ -16,10 +16,10 @@
 
 | GitHub |
 |---|
-| `<логин 1>` |
-| `<логин 2>` |
-| `<логин 3>` |
-| `<логин 4>` |
+| `abikenoverasyl1` |
+| `<MeirRakh` |
+| `tannur123` |
+| `RusyaMine` |
 
 ## Mine
 
